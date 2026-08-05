@@ -1,0 +1,69 @@
+#!/usr/bin/env python3
+"""Generate products.xml RSS feed from Etsy products for Pinterest auto-publish."""
+import json, urllib.request, datetime
+from pathlib import Path
+
+ROOT = Path("/Users/macmini/datacrafted-blog")
+OUT = ROOT / "products.xml"
+
+def fetch_products():
+    """Fetch active Etsy listings with images."""
+    env = {}
+    with open('/Volumes/Cascade/Hermes/.env') as f:
+        for line in f:
+            if line.strip() and not line.startswith('#') and '=' in line:
+                k, v = line.strip().split('=', 1)
+                env[k.strip()] = v.strip()
+    url = f"https://api.etsy.com/v3/application/shops/{env['ETSY_SHOP_ID']}/listings/active?limit=100"
+    req = urllib.request.Request(url, headers={
+        'x-api-key': f"{env['ETSY_KEYSTRING']}:{env['ETSY_SHARED_SECRET']}",
+        'Authorization': f"Bearer {env['ETSY_ACCESS_TOKEN']}"})
+    data = json.loads(urllib.request.urlopen(req, timeout=30).read())
+    products = []
+    for l in data.get('results', []):
+        lid = l['listing_id']
+        # image
+        try:
+            ireq = urllib.request.Request(f"https://api.etsy.com/v3/application/listings/{lid}/images", headers={
+                'x-api-key': f"{env['ETSY_KEYSTRING']}:{env['ETSY_SHARED_SECRET']}",
+                'Authorization': f"Bearer {env['ETSY_ACCESS_TOKEN']}"})
+            imgs = json.loads(urllib.request.urlopen(ireq, timeout=30).read()).get('results', [])
+            img = imgs[0].get('url_fullxfull') if imgs else ''
+        except Exception:
+            img = ''
+        products.append({
+            'title': l['title'],
+            'link': f"https://www.etsy.com/listing/{lid}",
+            'desc': (l.get('description') or '')[:200].replace('\n', ' '),
+            'img': img,
+            'date': datetime.date.today().isoformat(),
+        })
+    return products
+
+def build_rss(products):
+    items = ""
+    for p in products:
+        items += f"""  <item>
+    <title>{p['title'][:95]}</title>
+    <link>{p['link']}</link>
+    <description><![CDATA[{p['desc']}]]></description>
+    <pubDate>{p['date']}</pubDate>
+    <guid>{p['link']}</guid>
+    <enclosure url="{p['img']}" type="image/jpeg" length="0"/>
+  </item>
+"""
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>DataCrafted Products</title>
+    <link>https://matthieulebasai-droid.github.io/datacrafted-blog/</link>
+    <description>DataCrafted digital products: spreadsheets, Notion templates & automation tools.</description>
+    <atom:link href="https://matthieulebasai-droid.github.io/datacrafted-blog/products.xml" rel="self" type="application/rss+xml"/>
+{items}  </channel>
+</rss>
+"""
+
+if __name__ == "__main__":
+    products = fetch_products()
+    OUT.write_text(build_rss(products), encoding='utf-8')
+    print(f"✅ {OUT} — {len(products)} produits")
