@@ -45,6 +45,19 @@ def build_rss(products):
     import email.utils
     mapping = json.load(open(ROOT / 'redirect_map.json')) if (ROOT / 'redirect_map.json').exists() else {}
     SITE = "https://matthieulebasai-droid.github.io/datacrafted-blog"
+    # Preserve existing pubDates per guid (stable dates => Pinterest won't re-pin)
+    old_dates = {}
+    if OUT.exists():
+        try:
+            import xml.etree.ElementTree as ET
+            old = ET.parse(str(OUT))
+            for it in old.findall('.//item'):
+                g = it.findtext('guid') or ''
+                pd = it.findtext('pubDate')
+                if pd:
+                    old_dates[g] = pd
+        except Exception:
+            pass
     items = ""
     for p in products:
         # real image sizes via HEAD
@@ -57,11 +70,11 @@ def build_rss(products):
             length, ctype = '0', 'image/jpeg'
         title = xml_escape(p['title'][:95])
         desc = p['desc'].replace(']]>', ']]]]><![CDATA[>')
-        pub = email.utils.formatdate(timeval=None, localtime=False)
         # local redirect URL (domain claimed on Pinterest) -> lands on Etsy
         lid = p['link'].rstrip('/').split('/')[-1]
         slug = mapping.get(lid)
         local_link = f"{SITE}/go/{slug}/" if slug else p['link']
+        pub = old_dates.get(local_link) or email.utils.formatdate(timeval=None, localtime=False)
         items += f"""  <item>
     <title>{title}</title>
     <link>{local_link}</link>

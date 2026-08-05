@@ -54,6 +54,8 @@ footer{border-top:1px solid var(--border);margin-top:3rem;padding-top:1.5rem;col
 .card h2{font-size:1.2rem;color:var(--fg);margin-bottom:.4rem}
 .card p{color:var(--muted);font-size:.92rem;margin:0}
 .card .date{color:var(--muted);font-size:.78rem;margin-top:.6rem;display:block}
+.cta{background:#11161d;border:1px solid var(--accent);border-radius:10px;padding:.9rem 1.2rem;margin-bottom:2rem;font-size:.95rem}
+.cta a{font-weight:700}
 .hero{margin-bottom:2.5rem}
 .hero h1{font-size:2.1rem;letter-spacing:-.02em;line-height:1.2;margin-bottom:.75rem}
 .hero p{color:var(--muted);font-size:1.05rem;max-width:600px}
@@ -85,6 +87,7 @@ def page(title, desc, body, slug=None):
 <h1><a href="/datacrafted-blog/">DataCrafted</a></h1>
 <div class="tagline">Python CLI tools & solo-dev lessons</div>
 </header>
+<div class="cta"><strong>🎁 Free:</strong> <a href="https://lebasai.gumroad.com/l/ecqees">10 Python CLI Tools for data work</a> — instant download, no signup walls.</div>
 {body}
 <footer>© 2026 DataCrafted · <a href="https://github.com/matthieulebasai-droid/datacrafted-tools">datacrafted-tools on GitHub</a> · <a href="/datacrafted-blog/">Home</a></footer>
 </div>
