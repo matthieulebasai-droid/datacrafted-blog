@@ -43,6 +43,8 @@ def fetch_products():
 
 def build_rss(products):
     import email.utils
+    mapping = json.load(open(ROOT / 'redirect_map.json')) if (ROOT / 'redirect_map.json').exists() else {}
+    SITE = "https://matthieulebasai-droid.github.io/datacrafted-blog"
     items = ""
     for p in products:
         # real image sizes via HEAD
@@ -56,12 +58,16 @@ def build_rss(products):
         title = xml_escape(p['title'][:95])
         desc = p['desc'].replace(']]>', ']]]]><![CDATA[>')
         pub = email.utils.formatdate(timeval=None, localtime=False)
+        # local redirect URL (domain claimed on Pinterest) -> lands on Etsy
+        lid = p['link'].rstrip('/').split('/')[-1]
+        slug = mapping.get(lid)
+        local_link = f"{SITE}/go/{slug}/" if slug else p['link']
         items += f"""  <item>
     <title>{title}</title>
-    <link>{p['link']}</link>
+    <link>{local_link}</link>
     <description><![CDATA[{desc}]]></description>
     <pubDate>{pub}</pubDate>
-    <guid>{p['link']}</guid>
+    <guid>{local_link}</guid>
     <enclosure url="{p['img']}" type="{ctype}" length="{length}"/>
   </item>
 """
