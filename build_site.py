@@ -68,6 +68,7 @@ def page(title, desc, body, slug=None):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="p:domain_verify" content="8f5011c2f3629252bed463f94bbd39cd"/>
 <title>{title}</title>
 <meta name="description" content="{desc}">
 {canonical}
