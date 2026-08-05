@@ -2,6 +2,7 @@
 """Generate products.xml RSS feed from Etsy products for Pinterest auto-publish."""
 import json, urllib.request, datetime
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 
 ROOT = Path("/Users/macmini/datacrafted-blog")
 OUT = ROOT / "products.xml"
@@ -41,15 +42,27 @@ def fetch_products():
     return products
 
 def build_rss(products):
+    import email.utils
     items = ""
     for p in products:
+        # real image sizes via HEAD
+        try:
+            hreq = urllib.request.Request(p['img'], method='HEAD')
+            hres = urllib.request.urlopen(hreq, timeout=15)
+            length = hres.headers.get('Content-Length', '0')
+            ctype = hres.headers.get('Content-Type', 'image/jpeg').split(';')[0]
+        except Exception:
+            length, ctype = '0', 'image/jpeg'
+        title = xml_escape(p['title'][:95])
+        desc = p['desc'].replace(']]>', ']]]]><![CDATA[>')
+        pub = email.utils.formatdate(timeval=None, localtime=False)
         items += f"""  <item>
-    <title>{p['title'][:95]}</title>
+    <title>{title}</title>
     <link>{p['link']}</link>
-    <description><![CDATA[{p['desc']}]]></description>
-    <pubDate>{p['date']}</pubDate>
+    <description><![CDATA[{desc}]]></description>
+    <pubDate>{pub}</pubDate>
     <guid>{p['link']}</guid>
-    <enclosure url="{p['img']}" type="image/jpeg" length="0"/>
+    <enclosure url="{p['img']}" type="{ctype}" length="{length}"/>
   </item>
 """
     return f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -57,7 +70,7 @@ def build_rss(products):
   <channel>
     <title>DataCrafted Products</title>
     <link>https://matthieulebasai-droid.github.io/datacrafted-blog/</link>
-    <description>DataCrafted digital products: spreadsheets, Notion templates & automation tools.</description>
+    <description>DataCrafted digital products: spreadsheets, Notion templates and automation tools.</description>
     <atom:link href="https://matthieulebasai-droid.github.io/datacrafted-blog/products.xml" rel="self" type="application/rss+xml"/>
 {items}  </channel>
 </rss>
